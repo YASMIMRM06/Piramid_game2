@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Cole estas regras em: Firebase Console > Firestore Database > Regras > Publicar
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null; }
+
+    function notaOk(d, k) { return d[k] is int && d[k] >= 1 && d[k] <= 5; }
+
+    function avaliacaoValida(d) {
+      return notaOk(d, 'resenha') && notaOk(d, 'presencaVip') && notaOk(d, 'aura')
+        && notaOk(d, 'modoParceiro') && notaOk(d, 'carismaNatural')
+        && notaOk(d, 'humorDeMilhoes') && notaOk(d, 'energiaDeGrupo')
+        && notaOk(d, 'criatividadeCaotica') && notaOk(d, 'modoAtleta')
+        && notaOk(d, 'talentoDePalco') && notaOk(d, 'dripEscolar')
+        && notaOk(d, 'coracaoDeDorama') && notaOk(d, 'queridinhoProfessores')
+        && notaOk(d, 'cerebroTurbo') && notaOk(d, 'caosControlado')
+        && d.pontuacaoTotal >= 15 && d.pontuacaoTotal <= 75;
+    }
+
+    // Perfil do usuário autenticado
+    match /usuarios/{uid} {
+      allow read: if logado();
+      allow write: if logado() && request.auth.uid == uid;
+    }
+
+    // Pessoas que podem ser avaliadas
+    match /pessoas/{id} {
+      allow read: if logado();
+      allow create: if logado() && request.resource.data.criadoPor == request.auth.uid;
+      // Só quem cadastrou altera; qualquer usuário pode se vincular ("sou eu")
+      // a uma pessoa ainda sem vínculo, mudando apenas o campo usuarioUid.
+      allow update: if logado() && (
+        resource.data.criadoPor == request.auth.uid
+        || (resource.data.usuarioUid == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usuarioUid'])
+            && request.resource.data.usuarioUid == request.auth.uid)
+      );
+      allow delete: if logado() && resource.data.criadoPor == request.auth.uid;
+    }
+
+    // Avaliações: id = avaliadorUid_pessoaId (uma avaliação por usuário/pessoa)
+    match /avaliacoes/{id} {
+      allow read: if logado();
+      allow create, update: if logado()
+        && request.resource.data.avaliadorUid == request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.pessoaId
+        && avaliacaoValida(request.resource.data)
+        // impede autoavaliação também no servidor
+        && get(/databases/$(database)/documents/pessoas/$(request.resource.data.pessoaId)).data.get('usuarioUid', null) != request.auth.uid;
+      // o avaliador apaga a própria; quem criou a pessoa apaga as recebidas
+      allow delete: if logado() && (
+        resource.data.avaliadorUid == request.auth.uid
+        || get(/databases/$(database)/documents/pessoas/$(resource.data.pessoaId)).data.criadoPor == request.auth.uid
+      );
+    }
+  }
+}
