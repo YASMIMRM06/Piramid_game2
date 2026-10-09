@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "14252029195",
+    "project_id": "ifpr-389f7",
+    "storage_bucket": "ifpr-389f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14252029195:android:8f87d61a3caec5fad89e0e",
+        "android_client_info": {
+          "package_name": "com.example.piramid_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-1u8WtuytJwempoq5pY5KbUd0PBCHK3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
